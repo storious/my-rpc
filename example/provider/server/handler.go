@@ -26,10 +26,10 @@ func handle(c echo.Context) error {
 		fmt.Println("body is nil")
 		return c.JSON(400, "body is nil")
 	}
-	service, ok := registry.GetService(req.ServiceName)
+	service, ok := registry.NewRegistry(registry.GetLocalCache()).GetService(req.ServiceName)
 	if !ok {
-		fmt.Println("service not found")
-		return c.JSON(400, "service not found, 服务未找到！")
+		fmt.Printf("service: %v not found\n", req.ServiceName)
+		return c.JSON(400, "service not found")
 	}
 
 	fmt.Printf("method name: %s, args: %v\n", req.MethodName, req.Args)

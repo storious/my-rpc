@@ -10,11 +10,11 @@ import (
 	"net/http"
 )
 
-// UserServiceProxy 静态代理
-type UserServiceProxy struct {
+// UserService 静态代理
+type UserService struct {
 }
 
-func (u UserServiceProxy) GetUser(user model.User) model.User {
+func (u UserService) GetUser(user model.User) model.User {
 	var serializer serializer2.Serializer = serializer2.JsonSerializer{}
 	rpcReq := model2.RpcRequest{
 		ServiceName:    "UserService",

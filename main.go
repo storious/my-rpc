@@ -1,35 +1,33 @@
 package main
 
-import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"net/http"
-)
+import "fmt"
 
-type Req struct {
-	Parameter any `json:"parameter"`
+type Number interface {
+	~int | ~float64 | ~float32 | ~int32 | ~int64
+}
+
+type Adder[T Number] interface {
+	Add(T, T) T
+}
+
+type AddInt struct {
+}
+
+func (a AddInt) Add(x, y int) int {
+	return x + y
+}
+
+type Float float32
+type AddFloat struct {
+}
+
+func (a AddFloat) Add(x, y Float) Float {
+	return x + y
 }
 
 func main() {
-	req := Req{Parameter: "req"}
-	body, _ := json.Marshal(req)
-	resp, err := http.Post("url", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
-
-	resBody, _ := io.ReadAll(resp.Body)
-	var id int
-	err = json.Unmarshal(resBody, &id)
-	if err != nil {
-		return
-	}
+	var a Adder[int] = AddInt{}
+	fmt.Println(a.Add(1, 2))
+	var b Adder[Float] = AddFloat{}
+	fmt.Println(b.Add(1.2, 2))
 }

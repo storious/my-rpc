@@ -20,7 +20,7 @@ func NewProxy(target any, h InvocationHandler) *Proxy {
 	value := reflect.ValueOf(target)
 	methods := make(map[string]*Method)
 	for i := 0; i < typ.NumMethod(); i++ {
-		methods[typ.Method(i).Name] = &Method{value: value.Method(i)}
+		methods[typ.Method(i).Name] = &Method{name: typ.Method(i).Name, value: value.Method(i)}
 	}
 	return &Proxy{target: target, methods: methods, handle: h}
 }
@@ -30,6 +30,7 @@ func (p *Proxy) InvokeMethod(methodName string, args ...any) (any, error) {
 }
 
 type Method struct {
+	name  string
 	value reflect.Value
 }
 

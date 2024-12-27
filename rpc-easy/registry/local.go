@@ -5,19 +5,34 @@ package registry
  * 注册中心侧重管理注册的服务
  */
 
-import "sync"
-
-// TODO: redis 注册中心
-var mp sync.Map
-
-func Register(serviceName string, handler any) {
-	mp.Store(serviceName, handler)
+type Registry interface {
+	Register(string, any)
+	GetService(string) (any, bool)
+	RemoveService(string)
 }
 
-func GetService(serviceName string) (any, bool) {
-	return mp.Load(serviceName)
+type registry struct {
+	cache Cache
 }
 
-func RemoveService(serviceName string) {
-	mp.Delete(serviceName)
+func NewRegistry(cache Cache) Registry {
+	return &registry{
+		cache: cache,
+	}
+}
+
+func (r *registry) Register(serviceName string, handler any) {
+	r.cache.SetItem(serviceName, handler)
+}
+
+func (r *registry) GetService(serviceName string) (any, bool) {
+	service := r.cache.GetItem(serviceName)
+	if service == nil {
+		return nil, false
+	}
+	return service, true
+}
+
+func (r *registry) RemoveService(serviceName string) {
+	r.cache.SetItem(serviceName, nil)
 }
