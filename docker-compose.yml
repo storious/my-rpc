@@ -1,0 +1,15 @@
+services:
+  etcd:
+    image: bitnami/etcd:latest
+    ports:
+      - '2379:2379'
+      - '2380:2380'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://localhost:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://172.18.0.2:2380
+      - ETCD_INITIAL_CLUSTER=default=http://172.18.0.2:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_NAME=default

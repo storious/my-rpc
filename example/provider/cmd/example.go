@@ -6,7 +6,6 @@ import (
 	"myRPC/rpc-easy/registry"
 )
 
-// TODO: provide user service example
 func main() {
 	httpServer := server.NewHttpServer()
 	var r = registry.NewRegistry(registry.GetLocalCache())

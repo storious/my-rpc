@@ -1,33 +1,98 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"github.com/redis/go-redis/v9"
+	"time"
+)
 
-type Number interface {
-	~int | ~float64 | ~float32 | ~int32 | ~int64
+var ctx = context.Background()
+
+type RedisLock struct {
+	client *redis.Client
+	key    string
+	val    string
+	ch     chan struct{}
 }
 
-type Adder[T Number] interface {
-	Add(T, T) T
+func (l RedisLock) Lock() {
+	_, err := l.client.SetNX(ctx, l.key, l.val, 3*time.Second).Result()
+	if err != nil {
+		panic(err)
+	}
+	// 开启守护线程
+	go func() {
+		select {
+		case <-l.ch:
+			return
+		default:
+			time.Sleep(2 * time.Second)
+			l.client.ExpireAt(ctx, l.key, time.Now().Add(3*time.Second))
+		}
+	}()
 }
 
-type AddInt struct {
+func (l RedisLock) Unlock() {
+	err := l.client.Del(ctx, l.key).Err()
+	if err != nil {
+		panic(err)
+	}
+	l.ch <- struct{}{}
 }
 
-func (a AddInt) Add(x, y int) int {
-	return x + y
-}
-
-type Float float32
-type AddFloat struct {
-}
-
-func (a AddFloat) Add(x, y Float) Float {
-	return x + y
+type buffer struct {
+	l    *RedisLock
+	buf  []int
+	size int
 }
 
 func main() {
-	var a Adder[int] = AddInt{}
-	fmt.Println(a.Add(1, 2))
-	var b Adder[Float] = AddFloat{}
-	fmt.Println(b.Add(1.2, 2))
+	client := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+		DB:   0, // use default DB
+	})
+	lock := &RedisLock{
+		client: client,
+		key:    "lock",
+		val:    "lock",
+	}
+	buf := &buffer{
+		l:    lock,
+		buf:  make([]int, 0),
+		size: 5,
+	}
+	go func() {
+		for i := 0; i < 5; i++ {
+			produce(buf, i)
+		}
+	}()
+	go func() {
+		for i := 0; i < 5; i++ {
+			consume(buf)
+		}
+	}()
+	time.Sleep(10 * time.Second)
+}
+
+func consume(buf *buffer) {
+	buf.l.Lock()
+	defer buf.l.Unlock()
+	if len(buf.buf) == 0 {
+		println("buf is empty")
+		return
+	}
+	item := buf.buf[0]
+	buf.buf = buf.buf[1:]
+	println("consume item", item)
+}
+
+func produce(buf *buffer, item int) {
+	buf.l.Lock()
+	defer buf.l.Unlock()
+	for len(buf.buf) == buf.size {
+		println("buf is full")
+		return
+	}
+	buf.buf = append(buf.buf, item)
+	println("produce item", item)
 }

@@ -6,7 +6,6 @@ import (
 	"myRPC/example/consumer/proxy"
 )
 
-// TODO: consumer example
 func main() {
 	// static proxy
 	//var userService service.UserService = proxy.UserServiceProxy{}
